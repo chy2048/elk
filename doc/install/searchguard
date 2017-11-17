@@ -45,9 +45,61 @@ searchguard.authcz.admin_dn:
  - CN=sgadmin,OU=client,O=client,L=test,C=DE
  #
  
- cd /home/elk/elasticsearch-5.5.1
- #这个的作用其实就是把searchguard的信息刷到es上，searchguard本身也是靠es来存储数据的
- sh plugins/search-guard-5/tools/sgadmin.sh -cd plugins/search-guard-5/sgconfig/ -ks plugins/search-guard-5/sgconfig/sgadmin-keystore.jks -ts plugins/search-guard-5/sgconfig/truststore.jks  -kspass mypasswd -tspass mypasswd -nhnv --diagnose -cn es集群的名字 -h 随便一个节点的ip -p 9300
+cd /home/elk/elasticsearch-5.5.1
+#这个的作用其实就是把searchguard的信息刷到es上，searchguard本身也是靠es来存储数据的
+sh plugins/search-guard-5/tools/sgadmin.sh -cd plugins/search-guard-5/sgconfig/ -ks plugins/search-guard-5/sgconfig/sgadmin-keystore.jks -ts plugins/search-guard-5/sgconfig/truststore.jks  -kspass mypasswd -tspass mypasswd -nhnv --diagnose -cn es集群的名字 -h 随便一个节点的ip -p 9300
  
- 重启elasticsearch
+重启elasticsearch
  
+==============================
+ 
+3.集成kibana
+cd /home/elk/kibana-5.5.1/plugins/search-guard-5/tools
+ 
+#执行后会再提示输入密码，最终返回admin账号密码的hash值
+./hash.sh admin   
+ 
+cd ../sgconfig
+#修改admin的密码
+vim sg_internal_users.yml 
+#
+admin:
+hash: hash值
+#
+
+cd  /home/elk/kibana-5.5.1/config/
+#给kibana 一个admin的账号密码
+vim kibana.yml
+#
+elasticsearch.username: "admin"
+elasticsearch.password: "password"
+#
+
+==============================
+
+4. 权限配置
+cd /home/elk/elasticsearch-5.5.1/plugins/search-guard-5/sgconfig
+#修改roles.yml文件，主要配置角色的权限
+vim sg_roles.yml
+#
+developer:
+  cluster:
+    - CLUSTER_MONITOR
+  indices:
+    '*':
+      '*':
+        - INDICES_MONITOR
+        - READ
+#
+#把用户和角色绑定
+vim sg_roles_mapping.yml
+#
+developer:
+ users:
+  - user1
+  - user2
+#
+
+cd /home/elk/elasticsearch-5.5.1
+#动态生效
+sh plugins/search-guard-5/tools/sgadmin.sh -cd plugins/search-guard-5/sgconfig/ -ks plugins/search-guard-5/sgconfig/sgadmin-keystore.jks -ts plugins/search-guard-5/sgconfig/truststore.jks  -kspass mypasswd -tspass mypasswd -nhnv --diagnose -cn 集群名字 -h 任意节点ip -p 9300
