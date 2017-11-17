@@ -1,0 +1,120 @@
+1.准备工作
+
+1.1 jdk
+官网安装jdk1.8以上版本，链接 http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html
+解压tar包至目录 /usr/java/jdk1.8.0_111
+
+1.2	修改配置
+vim /etc/profile
+#
+export JAVA_HOME= /usr/java/jdk1.8.0_111
+export PATH=$PATH:$JAVA_HOME/bin
+export CLASSPATH=.:$JAVA_HOME/jre/lib:$JAVA_HOME/lib:$JAVA_HOME/lib/tools.jar
+#
+source /etc/profile
+java -version
+备注：如果已经安装有老的java版本，可以先删除 /usr/bin/java (一般为软连接)，重新创建软连接 ls -s /usr/bin/java  /usr/java/jdk1.8.0_111
+
+1.2	安装包下载
+1.2.1 elasticsearch
+线上版本：5.5.1
+下载地址： https://www.elastic.co/downloads/elasticsearch
+
+1.2.2 kibana
+线上版本：5.5.1
+下载地址：https://www.elastic.co/downloads/kibana
+
+=============================================================
+
+2.创建系统用户
+useradd -d /home/elk -m ek -g elk
+备注：elasticsearch用root用户启动会报错
+
+=============================================================
+
+3.系统环境配置
+3.1 kernel
+操作系统		 内核版本        备注
+centos6.5		3.5以上	        最佳
+centos6.5		默认（2.6.32）	影响es性能
+
+3.2 句柄数设置
+vim /etc/security/limits.conf
+#
+elk hard nofile 65536
+elk soft nofile 65536
+elk hard memlock unlimited
+elk soft memlock unlimited
+elk hard nporc 2048
+elk soft nporc 2048
+#
+备注：高配置的服务器可能对句柄的设置需求不同。如果启动报错，则根据报错日志设置相应的句柄数量。tip: 设置完毕，需退出当前xshell窗口,重新连接才会生效。
+
+3.3 虚拟内存设置
+vim /etc/sysctl.conf
+#
+vm.max_map_count=655360
+#
+sysctl -p   
+
+=============================================================
+
+4. 安装
+所有操作都用elk用户执行，默认所有的安装包都已经放到 /home/elk目录下
+4.1 elasticsearch
+cd /home/elk
+tar -zxvf elasticsearch5.5.1.tar.gz
+mkdir /data/elasticsearch_data
+mkdir /data/elasticsearch_logs
+参数设置
+vim /home/elk/elasticsearch-5.5.1/config/elasticsearch.yml
+#
+cluster.name: es_cbas
+node.name: ${hostname}
+path.data: /data/elasticsearch_data/
+path.logs: /data/elasticsearch_logs/
+network.host: ${hostname}
+http.port: 9200
+transport.host: ${hostname}
+transport.tcp.port: 9300
+#可选配置
+node.master:true/false
+node.data:true/false
+#
+设置开机启动
+sudo vim /etc/rc.local
+#
+su - elk -c "home/elk/elasticsearch-5.5.1/bin/elasticsearch -d"
+#
+
+4.2 kinaba
+cd /home/elk
+tar -zxvf kinaba5.5.1-linux-x64.tar.gz
+mv kinaba5.5.1-linux-x64 kinaba-5.5.1
+#修改配置
+vim /home/elk/kinaba-5.5.1/config/kibana.yml
+#
+server.port: 5601
+server.host: "${hostname}"
+elasticsearch.url: "http:${hostname}:9200"
+#
+设置开机启动
+vim /etc/rc.local
+#
+su - elk -c "nohup  /home/elk/kibana-5.5.1/bin/kibana  serve  &"
+#
+
+=============================================================
+
+5.参数优化
+5.1 elasticsearch.yml
+懒得写了，参见网上资料
+
+5.2 jvm.options
+heap size不可超过操作系统可用内存的一半，并且不可超过32G
+vim /home/elk/elasticsearch-5.5.1/config/jvm.options
+#
+-Xms31g
+-Xmx31g
+#
+
