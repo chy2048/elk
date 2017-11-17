@@ -108,7 +108,7 @@ su - elk -c "nohup  /home/elk/kibana-5.5.1/bin/kibana  serve  &"
 
 5.参数优化
 5.1 elasticsearch.yml
-懒得写了，参见网上资料
+参见网上的资料
 
 5.2 jvm.options
 heap size不可超过操作系统可用内存的一半，并且不可超过32G
