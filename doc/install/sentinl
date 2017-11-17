@@ -1,0 +1,85 @@
+1.准备工作
+1.1 sentinl
+线上版本：5.5.1
+下载地址：https://github.com/sirensolutions/sentinl/releases/download/tag-5.5/sentinl-v5.5.1.zip
+
+1.2 bootstrap.min.css
+下载地址：http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css
+
+==============================
+
+2.安装步骤
+所有操作都用elk用户执行，默认所有的安装包都已经放到 /home/elk目录下
+cd /home/elk/kibana-5.5.1/bin
+./kibana-plugin  install file:///home/elk/sentinl-v5.5.1.zip
+
+#需要提前下载bootstrap.min.css文件
+cp bootstrap.min.css /home/elk/kibana-5.5.1/optimize/bundles/
+cp bootstrap.min.css /home/elk/kibana-5.5.1/plugins/sentinl/public/less/
+
+cd /home/elk/kibana-5.5.1/optimize/bundles
+#把网络资源换成本地资源，否则离线情况下，插件启动后无法使用
+vim sentinl.style.css
+#
+@import "bootstrap.min.css";
+#
+
+cd /home/elk/kibana-5.5.1/plugins/sentinl/public/less
+#同理
+vim main.less
+#
+@import "bootstrap.min.css";
+#
+
+
+#更换js文件， 在actions 的webhook类型中，请求里面能引用payload里面的变量
+cd /home/elk/kibana-5.5.1/plugins/sentinl/server/lib
+mv actions.js{,.bak}
+换成 actions.js 见附件
+
+重启kibana
+
+==============================
+
+3.报警配置教程
+
+3.1 sentinl 介绍
+官网: https://github.com/sirensolutions/sentinl
+
+3.2 通过sentinl 增加监控
+
+#点击kibana左侧的菜单Sentinl
+
+#点击右上角的"New", 选择" + Watcher"
+
+#General: 菜单中描述了本监控的名称和执行周期, 可以分 小时/分钟/秒来配置
+
+#Input: 描述了数据来源, 可以通过写Query DSL来查找数据
+官方的文档:
+https://www.elastic.co/guide/en/elasticsearch/reference/current/search.html
+这里比较麻烦的是如何检查语句是否正确, 可以通过"Dev Tools" 中进行校验语句是否正确.
+
+#Condition:描述了满足监控的条件, 监控业务的规则需要在这里写
+a. 支持javascript语言来写业务
+b. 通过语句检查Input中的结果是否满足监控规则, Input中获取的数据可以通过变量payload来访问
+c. 需要发送的邮件标题和邮件内容可以通过设置payload的值来使用, 例如邮件标题: payload.subject = "监控报警邮件xxxx", Actions中可以通过{{payload.subject}} 来访问; 
+d. 如果邮件中涉及到中文, 需要进行urlencode, 例如 payload.subject = encodeURIComponent(payload.subject);
+e. Condition 最后需要返回true/false, 返回true之后, 将会继续执行Actions的语句;
+f. 内容字符是采用utf-8, 邮件接口支持utf-8
+g. 可以将写好的js语句保存到一个html, 直接在浏览器中打开调试(Chrome可以通过F12来查看脚本运行是否正确);
+
+#Tranform: 暂时不用
+
+#Actions:描述了当满足条件之后进行的动作, 支持webhook/email/email html/report/slack/console 
+#目前主要是通过调用http邮件接口来进行发送报警邮件, 所以使用的是Webhook
+邮件接口配置: 
+Method: 如果邮件内容较多的话, 建议是POST, 因为GET方式一般对URL的长度有限制, 太长会返回404错误
+Host: 邮件接口地址和端口
+Path: 邮件接口名, 例如"/sendmail_elk.php?"
+Body: 接口参数,例如: to=xxx@163.com&subject={{payload.subject}}&message={{payload.content}} 
+这里{{payload.subject}} 和 {{payload.content}} 取的是Condition中payload变量的内容.
+
+#Raw里描述整个监控的设置, 一般不需要修改
+
+
+
