@@ -34,9 +34,9 @@ useradd -d /home/elk -m ek -g elk
 
 3.系统环境配置
 3.1 kernel
-操作系统		 内核版本        备注
-centos6.5		3.5以上	        最佳
-centos6.5		默认（2.6.32）	影响es性能
+操作系统      内核版本       备注
+centos6.5    3.5以上        最佳
+centos6.5    默认（2.6.32） 影响es性能
 
 3.2 句柄数设置
 vim /etc/security/limits.conf
