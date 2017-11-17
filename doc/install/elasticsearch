@@ -24,13 +24,13 @@ java -version
 线上版本：5.5.1
 下载地址：https://www.elastic.co/downloads/kibana
 
-=============================================================
+==============================
 
 2.创建系统用户
 useradd -d /home/elk -m ek -g elk
 备注：elasticsearch用root用户启动会报错
 
-=============================================================
+==============================
 
 3.系统环境配置
 3.1 kernel
@@ -57,7 +57,7 @@ vm.max_map_count=655360
 #
 sysctl -p   
 
-=============================================================
+==============================
 
 4. 安装
 所有操作都用elk用户执行，默认所有的安装包都已经放到 /home/elk目录下
@@ -69,7 +69,7 @@ mkdir /data/elasticsearch_logs
 参数设置
 vim /home/elk/elasticsearch-5.5.1/config/elasticsearch.yml
 #
-cluster.name: es_cbas
+cluster.name: 集群名字
 node.name: ${hostname}
 path.data: /data/elasticsearch_data/
 path.logs: /data/elasticsearch_logs/
@@ -104,7 +104,7 @@ vim /etc/rc.local
 su - elk -c "nohup  /home/elk/kibana-5.5.1/bin/kibana  serve  &"
 #
 
-=============================================================
+==============================
 
 5.参数优化
 5.1 elasticsearch.yml
